@@ -6,6 +6,7 @@ import {
   standardXHRResponse,
 } from '../../test/test-helpers';
 import {Hls} from '../../';
+import fileNetworkTrace from './switcher';
 
 let simulationParams = {
   // number of seconds of video in each segment
@@ -45,7 +46,7 @@ const playlistResponse = (request) => {
 
 // run the simulation
 const runSimulation = function(options, done) {
-  let networkTrace = options.networkTrace;
+  let networkTrace = fileNetworkTrace ? fileNetworkTrace : options.networkTrace;
   let traceDurationInMs = networkTrace.reduce((acc, t) => acc + t[1], 0);
   simulationParams.segmentCount = Math.floor(traceDurationInMs / 1000 / simulationParams.segmentDuration);
   simulationParams.duration = simulationParams.segmentCount * simulationParams.segmentDuration;
