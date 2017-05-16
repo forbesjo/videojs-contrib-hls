@@ -4,6 +4,7 @@ import Config from '../../src/config';
 
 // a dynamic number of time-bandwidth pairs may be defined to drive the simulation
 let networkTimeline = document.querySelector('.network-timeline');
+let fileNetworkTrace = '';
 let $ = document.querySelector.bind(document);
 
 // apply any simulation parameters that were set in the fragment identifier
@@ -24,7 +25,8 @@ if (window.location.hash) {
 
 // collect the simulation parameters
 const parameters = function() {
-  let networkTrace = $('#network-trace').value
+  let value = fileNetworkTrace.length ? fileNetworkTrace : $('#network-trace').value;
+  let networkTrace = value
     .trim()
     .split('\n')
     .map((line) => line.split(' ').slice(-2).map(Number));
@@ -59,6 +61,8 @@ let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
 local.addEventListener('change', function() {
+  $('#network-trace').style.display = 'none';
+  fileNetworkTrace = '';
   const files = local.files;
 
   $('#network-trace').value = '';
@@ -71,7 +75,7 @@ local.addEventListener('change', function() {
     const reader = new FileReader();
 
     reader.addEventListener('loadend', function() {
-      $('#network-trace').value += reader.result;
+      fileNetworkTrace += reader.result;
     });
 
     reader.readAsText(files[i]);
