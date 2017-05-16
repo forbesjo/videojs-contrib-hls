@@ -59,19 +59,23 @@ let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
 local.addEventListener('change', function() {
-  const [file] = local.files;
-  const reader = new FileReader();
+  const files = local.files;
 
+  $('#network-trace').value = '';
   // do nothing if no file was chosen
-  if (!file) {
+  if (!files) {
     return;
   }
 
-  reader.addEventListener('loadend', function() {
-    $('#network-trace').value = reader.result;
-  });
+  for(var i = 0; i < files.length; i++) {
+    const reader = new FileReader();
 
-  reader.readAsText(file);
+    reader.addEventListener('loadend', function() {
+      $('#network-trace').value += reader.result;
+    });
+
+    reader.readAsText(files[i]);
+  }
 });
 
 let saveReport = $('#save-report');
