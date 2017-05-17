@@ -4,7 +4,6 @@ import Config from '../../src/config';
 
 // a dynamic number of time-bandwidth pairs may be defined to drive the simulation
 let networkTimeline = document.querySelector('.network-timeline');
-let fileNetworkTrace = '';
 let $ = document.querySelector.bind(document);
 
 // apply any simulation parameters that were set in the fragment identifier
@@ -25,11 +24,11 @@ if (window.location.hash) {
 
 // collect the simulation parameters
 const parameters = function() {
-  let value = fileNetworkTrace.length ? fileNetworkTrace : $('#network-trace').value;
-  let networkTrace = value
+  let networkTrace = $('#network-trace').value
     .trim()
     .split('\n')
     .map((line) => line.split(' ').slice(-2).map(Number));
+  console.log(networkTrace);
   let playlists = $('#bitrates').value
     .trim()
     .split('\n')
@@ -61,8 +60,6 @@ let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
 local.addEventListener('change', function() {
-  $('#network-trace').style.display = 'none';
-  fileNetworkTrace = '';
   const files = local.files;
 
   // do nothing if no file was chosen
@@ -70,16 +67,25 @@ local.addEventListener('change', function() {
     return;
   }
 
-  for(var i = 0; i < files.length; i++) {
-    const reader = new FileReader();
-
-    reader.addEventListener('loadend', function() {
-      fileNetworkTrace += reader.result;
-    });
-
-    reader.readAsText(files[i]);
+  if (files.length === 1) {
+    readFile(files[0]);
+    return;
+  }
+  $('#network-trace').style.display = 'none';
+  for (var i = 0; i < files.length; i++) {
+    readFile(files[i]);
+    runSimulations();
   }
 });
+
+const readFile = function(file) {
+  var reader = new FileReader();
+
+  reader.addEventListener('loadend', function() {
+    $('#network-trace').value = reader.result;
+  });
+  reader.readAsText(file);
+};
 
 let saveReport = $('#save-report');
 saveReport.addEventListener('click', function(){
@@ -125,20 +131,7 @@ const objToTable = function(obj) {
   ];
 };
 
-// [header, [values...]...] => header\nvalues,values
-const tableToText = function([header, ...rows], delimiter=',') {
-  const quote = (x) => Array.isArray(x) ? `"${JSON.stringify(x)}"` : x;
-
-  return [
-    header.join(delimiter),
-    ...rows.map((row) => row.map(quote).join(delimiter))
-  ].join('\n');
-};
-
-const createResults = (keys) => keys .reduce((obj, key) => Object.assign(obj, {[key]: []}), {});
-let runButton = document.getElementById('run-simulation');
-let results;
-runButton.addEventListener('click', function() {
+const runSimulations = function() {
   runSimulation(parameters(), function(err, res) {
     const data = {
       'run': results ? results.run.length : 0,
@@ -181,6 +174,22 @@ runButton.addEventListener('click', function() {
 
     displayTimeline(err, res);
   });
+};
+// [header, [values...]...] => header\nvalues,values
+const tableToText = function([header, ...rows], delimiter=',') {
+  const quote = (x) => Array.isArray(x) ? `"${JSON.stringify(x)}"` : x;
+
+  return [
+    header.join(delimiter),
+    ...rows.map((row) => row.map(quote).join(delimiter))
+  ].join('\n');
+};
+
+const createResults = (keys) => keys .reduce((obj, key) => Object.assign(obj, {[key]: []}), {});
+let runButton = document.getElementById('run-simulation');
+let results;
+runButton.addEventListener('click', function() {
+  runSimulations();
 });
 
 runButton.click();
