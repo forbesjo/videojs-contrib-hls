@@ -6,7 +6,6 @@ import {
   standardXHRResponse,
 } from '../../test/test-helpers';
 import {Hls} from '../../';
-import fileNetworkTrace from './switcher';
 
 let simulationParams = {
   // number of seconds of video in each segment

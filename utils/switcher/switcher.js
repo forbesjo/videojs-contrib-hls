@@ -185,5 +185,3 @@ runButton.addEventListener('click', function() {
 });
 
 runButton.click();
-
-export default fileNetworkTrace;
