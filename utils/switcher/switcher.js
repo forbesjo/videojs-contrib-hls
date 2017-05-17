@@ -4,7 +4,6 @@ import Config from '../../src/config';
 
 // a dynamic number of time-bandwidth pairs may be defined to drive the simulation
 let networkTimeline = document.querySelector('.network-timeline');
-let fileNetworkTrace = '';
 let $ = document.querySelector.bind(document);
 
 // apply any simulation parameters that were set in the fragment identifier
@@ -25,12 +24,10 @@ if (window.location.hash) {
 
 // collect the simulation parameters
 const parameters = function() {
-  let value = fileNetworkTrace.length ? fileNetworkTrace : $('#network-trace').value;
-  let networkTrace = value
+  let networkTrace = $('#network-trace').value
     .trim()
     .split('\n')
     .map((line) => line.split(' ').slice(-2).map(Number));
-  console.log(networkTrace);
   let playlists = $('#bitrates').value
     .trim()
     .split('\n')
@@ -91,50 +88,6 @@ const readFile = function(file) {
   reader.readAsText(file);
 };
 
-let saveReport = $('#save-report');
-saveReport.addEventListener('click', function(){
-  const result = $('#result').value;
-  const data = new Blob([result], {type: 'text/plain'});
-
-  let textFile = window.URL.createObjectURL(data);
-
-  let link = document.createElement('a');
-  link.setAttribute('download', 'report.csv');
-  link.href = textFile;
-  document.body.appendChild(link);
-
-  window.requestAnimationFrame(function () {
-    let event = new MouseEvent('click');
-    link.dispatchEvent(event);
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(textFile);
-  });
-});
-
-// { foo: [1, 2], bar: [3, 4] } =>
-// [[ foo, bar ],
-//  [ 1,   3   ],
-//  [ 2,   4   ]]
-const objToTable = function(obj) {
-  const rows = Object.values(obj)
-    .reduce((rows, property) => {
-      property.forEach((value, i) => {
-        if (!Array.isArray(rows[i])) {
-          rows[i] = [];
-        }
-
-        rows[i].push(value);
-      });
-
-      return rows;
-    }, []);
-
-  return [
-    Object.keys(obj),
-    ...rows
-  ];
-};
-
 const runSimulations = function() {
   runSimulation(parameters(), function(err, res) {
     const data = {
@@ -179,6 +132,51 @@ const runSimulations = function() {
     displayTimeline(err, res);
   });
 };
+
+let saveReport = $('#save-report');
+saveReport.addEventListener('click', function(){
+  const result = $('#result').value;
+  const data = new Blob([result], {type: 'text/plain'});
+
+  let textFile = window.URL.createObjectURL(data);
+
+  let link = document.createElement('a');
+  link.setAttribute('download', 'report.csv');
+  link.href = textFile;
+  document.body.appendChild(link);
+
+  window.requestAnimationFrame(function () {
+    let event = new MouseEvent('click');
+    link.dispatchEvent(event);
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(textFile);
+  });
+});
+
+// { foo: [1, 2], bar: [3, 4] } =>
+// [[ foo, bar ],
+//  [ 1,   3   ],
+//  [ 2,   4   ]]
+const objToTable = function(obj) {
+  const rows = Object.values(obj)
+    .reduce((rows, property) => {
+      property.forEach((value, i) => {
+        if (!Array.isArray(rows[i])) {
+          rows[i] = [];
+        }
+
+        rows[i].push(value);
+      });
+
+      return rows;
+    }, []);
+
+  return [
+    Object.keys(obj),
+    ...rows
+  ];
+};
+
 // [header, [values...]...] => header\nvalues,values
 const tableToText = function([header, ...rows], delimiter=',') {
   const quote = (x) => Array.isArray(x) ? `"${JSON.stringify(x)}"` : x;
