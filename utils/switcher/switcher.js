@@ -83,15 +83,14 @@ local.addEventListener('change', function() {
 });
 
 let saveReport = $('#save-report');
-let report = {};
 saveReport.addEventListener('click', function(){
-  const text = JSON.stringify(report, null, 2);
-  const data = new Blob([text], {type: 'text/plain'});
+  const result = $('#result').value;
+  const data = new Blob([result], {type: 'text/plain'});
 
   let textFile = window.URL.createObjectURL(data);
 
   let link = document.createElement('a');
-  link.setAttribute('download', 'report.json');
+  link.setAttribute('download', 'report.csv');
   link.href = textFile;
   document.body.appendChild(link);
 
@@ -103,12 +102,88 @@ saveReport.addEventListener('click', function(){
   });
 });
 
+// { foo: [1, 2], bar: [3, 4] } =>
+// [[ foo, bar ],
+//  [ 1,   3   ],
+//  [ 2,   4   ]]
+const objToTable = function(obj) {
+  const rows = Object.values(obj)
+    .reduce((rows, property) => {
+      property.forEach((value, i) => {
+        if (!Array.isArray(rows[i])) {
+          rows[i] = [];
+        }
+
+        rows[i].push(value);
+      });
+
+      return rows;
+    }, []);
+
+  return [
+    Object.keys(obj),
+    ...rows
+  ];
+};
+
+// [header, [values...]...] => header\nvalues,values
+const tableToText = function([header, ...rows], delimiter=',') {
+  const quote = (x) => Array.isArray(x) ? `"${JSON.stringify(x)}"` : x;
+
+  return [
+    header.join(delimiter),
+    ...rows.map((row) => row.map(quote).join(delimiter))
+  ].join('\n');
+};
+
+const createResults = (keys) => keys .reduce((obj, key) => Object.assign(obj, {[key]: []}), {});
 let runButton = document.getElementById('run-simulation');
+let results;
 runButton.addEventListener('click', function() {
   runSimulation(parameters(), function(err, res) {
-    report = res;
+    const data = {
+      'run': results ? results.run.length : 0,
+      'time to start': res.buffered.find(({buffered}) => buffered).time,
+      'timeouts': res.playlists.filter(({timedout}) => timedout).length,
+      'aborts': res.playlists.filter(({aborted}) => aborted).length,
+      'calculated bandwidth [time bandwidth]': res.effectiveBandwidth.map(({time, bandwidth}) => [time, bandwidth]),
+      'selected bitrates': res.playlists.map(({bitrate}) => bitrate),
+      'empty buffer regions [start end]': res.buffered.reduce(function(result, sample, index) {
+        var last = result[result.length - 1];
+
+        if (sample.buffered === 0) {
+          if (last && last.index === index - 1) {
+            // add this sample to the interval we're accumulating
+            last.end = sample.time;
+            last.index = index;
+          } else {
+            // this sample starts a new interval
+            result.push({
+              start: sample.time,
+              end: sample.time,
+              index: index
+            });
+          }
+        }
+        // filter out time periods where the buffer isn't empty
+        return result;
+      }, []).map(({start, end}) => [start, end])
+    };
+
+    // create global result if it doesn't exist
+    if (!results) {
+      results = createResults(Object.keys(data));
+    }
+
+    // add this simulation result to the results
+    Object.entries(data).forEach(([key, value]) => results[key].push(value));
+
+    $('#result').innerText = tableToText(objToTable(results));
+
     displayTimeline(err, res);
   });
 });
 
 runButton.click();
+
+export default fileNetworkTrace;
