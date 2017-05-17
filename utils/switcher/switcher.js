@@ -73,7 +73,6 @@ local.addEventListener('change', function() {
   $('#network-trace').style.display = 'none';
   for (var i = 0; i < files.length; i++) {
     readFile(files[i]);
-    runSimulations();
   }
 });
 
@@ -82,6 +81,7 @@ const readFile = function(file) {
 
   reader.addEventListener('loadend', function() {
     $('#network-trace').value = reader.result;
+    runSimulations();
   });
   reader.readAsText(file);
 };
