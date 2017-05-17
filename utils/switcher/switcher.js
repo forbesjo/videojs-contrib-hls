@@ -65,6 +65,7 @@ local.addEventListener('change', function() {
   fileNetworkTrace = '';
   const files = local.files;
 
+  $('#network-trace').value = '';
   // do nothing if no file was chosen
   if (!files) {
     return;
