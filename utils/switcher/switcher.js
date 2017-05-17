@@ -59,7 +59,6 @@ let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
 local.addEventListener('change', function() {
-  $('#network-trace').style.display = 'none';
   const files = local.files;
 
   $('#network-trace').value = '';
