@@ -55,6 +55,9 @@ const parameters = function() {
   };
 };
 
+// callback function, do nothing
+const noop = function() {};
+
 let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
@@ -75,13 +78,13 @@ local.addEventListener('change', function() {
   }
   $('#network-trace').style.display = 'none';
   var promise = Promise.resolve();
-  Array.from(files).forEach(function(file) {
-    promise = promise.then(function() {
+  Array.from(files).reduce(function(promise, file) {
+    return promise.then(function() {
       return readFile(file);
     }).then(function() {
-      runSimulations();
+      runSimulations(noop);
     });
-  })
+  }, Promise.resolve())
 });
 
 const readFile = function(file) {
@@ -95,7 +98,7 @@ const readFile = function(file) {
   })
 };
 
-const runSimulations = function() {
+const runSimulations = function(callback) {
   runSimulation(parameters(), function(err, res) {
     const data = {
       'run': results ? results.run.length : 0,
@@ -137,6 +140,8 @@ const runSimulations = function() {
     $('#result').innerText = tableToText(objToTable(results));
 
     displayTimeline(err, res);
+
+    if(callback) noop();
   });
 };
 
