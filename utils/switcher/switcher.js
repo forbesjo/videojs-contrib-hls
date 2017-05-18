@@ -60,30 +60,39 @@ let local = $('#local');
 local.addEventListener('click', () => local.value = '');
 local.addEventListener('change', function() {
   const files = local.files;
-
   // do nothing if no file was chosen
   if (!files) {
     return;
   }
 
   if (files.length === 1) {
-    readFile(files[0]);
+    var reader = new FileReader();
+    reader.onloadend = function() {
+      $('#network-trace').value = reader.result;
+    };
+    reader.readAsText(file);
     return;
   }
   $('#network-trace').style.display = 'none';
-  for (var i = 0; i < files.length; i++) {
-    readFile(files[i]);
-  }
+  var promise = Promise.resolve();
+  Array.from(files).forEach(function(file) {
+    promise = promise.then(function() {
+      return readFile(file);
+    }).then(function() {
+      runSimulations();
+    });
+  })
 });
 
 const readFile = function(file) {
-  var reader = new FileReader();
-
-  reader.addEventListener('loadend', function() {
-    $('#network-trace').value = reader.result;
-    runSimulations();
-  });
-  reader.readAsText(file);
+  return new Promise((resolve, reject) => {
+    var reader = new FileReader();
+    reader.onloadend = function() {
+      $('#network-trace').value = reader.result;
+      resolve();
+    };
+    reader.readAsText(file);
+  })
 };
 
 const runSimulations = function() {
