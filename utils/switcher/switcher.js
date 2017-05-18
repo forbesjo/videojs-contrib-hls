@@ -95,6 +95,8 @@ const readFile = function(file) {
   })
 };
 
+let results;
+
 const runSimulations = function(resolve) {
   runSimulation(parameters(), function(err, res) {
     const data = {
@@ -134,7 +136,32 @@ const runSimulations = function(resolve) {
     // add this simulation result to the results
     Object.entries(data).forEach(([key, value]) => results[key].push(value));
 
-    $('#result').innerText = tableToText(objToTable(results));
+    // find the median of 'time to start'
+    results['time to start'].sort((a, b) => a - b);
+    let lowMiddle = Math.floor((results['time to start'].length - 1) / 2);
+    let highMiddle = Math.ceil((results['time to start'].length - 1) / 2);
+
+    // sum all the selected bitrates value and the length
+    let sumSelectedBitrates = results['selected bitrates'].reduce(function(a, b) { return a.concat(b) })
+                                                          .reduce(function(a, b) { return a + b });
+    let selectedBitratesLength = results['selected bitrates'].reduce(function(a, b) { return a.concat(b) }).length;
+
+    // sum all the calculated bitrates value and the length
+    let sumCalculatedBitrates = results['calculated bandwidth [time bandwidth]'].reduce(function(a, b) { return a.concat(b) })
+                                                                                .reduce(function(a, b) { return a + b[1] }, 0);
+    let calculatedBitratesLength = results['calculated bandwidth [time bandwidth]'].reduce(function(a, b) { return a.concat(b) }).length;
+
+    const sum = {
+      'run': results.run.length,
+      'time to start': (results['time to start'][lowMiddle] + results['time to start'][highMiddle]) / 2,
+      'timeouts': results.timeouts.reduce((prev, curr) => prev + curr),
+      'aborts': results.aborts.reduce((prev, curr) => prev + curr),
+      'calculated bandwidth [time bandwidth]': sumCalculatedBitrates / calculatedBitratesLength,
+      'selected bitrates': sumSelectedBitrates / selectedBitratesLength,
+      'empty buffer regions [start end]': results['empty buffer regions [start end]'].reduce(function(acc, val) { return acc + val.length -1; }, 0)
+    };
+
+    $('#result').innerText = tableToText(objToTable(sum));
 
     displayTimeline(err, res);
     if(resolve) resolve();
@@ -168,14 +195,10 @@ saveReport.addEventListener('click', function(){
 const objToTable = function(obj) {
   const rows = Object.values(obj)
     .reduce((rows, property) => {
-      property.forEach((value, i) => {
-        if (!Array.isArray(rows[i])) {
-          rows[i] = [];
-        }
-
-        rows[i].push(value);
-      });
-
+      if (!Array.isArray(rows[0])) {
+        rows[0] = [];
+      }
+      rows[0].push(property);
       return rows;
     }, []);
 
@@ -197,7 +220,6 @@ const tableToText = function([header, ...rows], delimiter=',') {
 
 const createResults = (keys) => keys .reduce((obj, key) => Object.assign(obj, {[key]: []}), {});
 let runButton = document.getElementById('run-simulation');
-let results;
 runButton.addEventListener('click', function() {
   runSimulations();
 });
