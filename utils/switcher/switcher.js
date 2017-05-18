@@ -55,9 +55,6 @@ const parameters = function() {
   };
 };
 
-// callback function, do nothing
-const noop = function() {};
-
 let local = $('#local');
 // clear the file path to allow for reload
 local.addEventListener('click', () => local.value = '');
@@ -82,7 +79,7 @@ local.addEventListener('change', function() {
     return promise.then(function() {
       return readFile(file);
     }).then(function() {
-      runSimulations(noop);
+      return new Promise((resolve, reject) => runSimulations(resolve));
     });
   }, Promise.resolve())
 });
@@ -98,7 +95,7 @@ const readFile = function(file) {
   })
 };
 
-const runSimulations = function(callback) {
+const runSimulations = function(resolve) {
   runSimulation(parameters(), function(err, res) {
     const data = {
       'run': results ? results.run.length : 0,
@@ -140,8 +137,7 @@ const runSimulations = function(callback) {
     $('#result').innerText = tableToText(objToTable(results));
 
     displayTimeline(err, res);
-
-    if(callback) noop();
+    if(resolve) resolve();
   });
 };
 
