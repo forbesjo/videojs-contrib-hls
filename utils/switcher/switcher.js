@@ -142,23 +142,23 @@ const runSimulations = function(resolve) {
     let highMiddle = Math.ceil((results['time to start'].length - 1) / 2);
 
     // sum all the selected bitrates value and the length
-    let sumSelectedBitrates = results['selected bitrates'].reduce(function(a, b) { return a.concat(b) })
-                                                          .reduce(function(a, b) { return a + b });
-    let selectedBitratesLength = results['selected bitrates'].reduce(function(a, b) { return a.concat(b) }).length;
+    let sumSelectedBitrates = results['selected bitrates'].reduce((a, b) => a.concat(b))
+                                                          .reduce((a, b) => a + b);
+    let selectedBitratesLength = results['selected bitrates'].reduce((a, b) => a.concat(b)).length;
 
     // sum all the calculated bitrates value and the length
-    let sumCalculatedBitrates = results['calculated bandwidth [time bandwidth]'].reduce(function(a, b) { return a.concat(b) })
-                                                                                .reduce(function(a, b) { return a + b[1] }, 0);
-    let calculatedBitratesLength = results['calculated bandwidth [time bandwidth]'].reduce(function(a, b) { return a.concat(b) }).length;
+    let sumCalculatedBitrates = results['calculated bandwidth [time bandwidth]'].reduce((a, b) => a.concat(b))
+                                                                                .reduce((a, b) => a + b[1], 0);
+    let calculatedBitratesLength = results['calculated bandwidth [time bandwidth]'].reduce((a, b) => a.concat(b)).length;
 
     const sum = {
       'run': results.run.length,
       'time to start': (results['time to start'][lowMiddle] + results['time to start'][highMiddle]) / 2,
-      'timeouts': results.timeouts.reduce((prev, curr) => prev + curr),
-      'aborts': results.aborts.reduce((prev, curr) => prev + curr),
+      'timeouts': results.timeouts.reduce((a, b) => a + b),
+      'aborts': results.aborts.reduce((a, b) => a + b),
       'calculated bandwidth [time bandwidth]': sumCalculatedBitrates / calculatedBitratesLength,
       'selected bitrates': sumSelectedBitrates / selectedBitratesLength,
-      'empty buffer regions [start end]': results['empty buffer regions [start end]'].reduce(function(acc, val) { return acc + val.length -1; }, 0)
+      'empty buffer regions [start end]': results['empty buffer regions [start end]'].reduce((acc, val) => acc + val.length - 1, 0)
     };
 
     $('#result').innerText = tableToText(objToTable(sum));
