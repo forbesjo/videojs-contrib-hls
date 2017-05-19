@@ -95,6 +95,11 @@ const readFile = function(file) {
   })
 };
 
+const quantileMetrics = function(array) {
+  array.sort((a, b) => a - b);
+  return [0.25, 0.5, 0.9, 0.95, 0.99].reduce((a, b) => a.concat(d3.quantile(array, b)), []);
+};
+
 let results;
 
 const runSimulations = function(resolve) {
@@ -136,33 +141,34 @@ const runSimulations = function(resolve) {
     // add this simulation result to the results
     Object.entries(data).forEach(([key, value]) => results[key].push(value));
 
-    // find the median of 'time to start'
-    results['time to start'].sort((a, b) => a - b);
-    let lowMiddle = Math.floor((results['time to start'].length - 1) / 2);
-    let highMiddle = Math.ceil((results['time to start'].length - 1) / 2);
+    // array contains all the selected bitrates
+    let selectedBitrates = results['selected bitrates'].reduce((a, b) => a.concat(b));
 
     // sum all the selected bitrates value and the length
     let sumSelectedBitrates = results['selected bitrates'].reduce((a, b) => a.concat(b))
                                                           .reduce((a, b) => a + b);
     let selectedBitratesLength = results['selected bitrates'].reduce((a, b) => a.concat(b)).length;
 
-    // sum all the calculated bitrates value and the length
-    let sumCalculatedBitrates = results['calculated bandwidth [time bandwidth]'].reduce((a, b) => a.concat(b))
-                                                                                .reduce((a, b) => a + b[1], 0);
-    let calculatedBitratesLength = results['calculated bandwidth [time bandwidth]'].reduce((a, b) => a.concat(b)).length;
+    // array contains all the calculated bitrates
+    let calculatedBitrates = results['calculated bandwidth [time bandwidth]'].reduce((a, b) => a.concat(b))
+                                                                             .reduce((a, b) => a.concat(b[1]), []);
+    // array contains all the rebuffer ratio
+    let rebufferRatios = results['empty buffer regions [start end]'].reduce((a, b) => a.concat(b))
+                                                                   .reduce((a, b) => a.concat((b[1] - b[0]) / 60000), []);
 
     const sum = {
       'run': results.run.length,
-      'time to start': (results['time to start'][lowMiddle] + results['time to start'][highMiddle]) / 2,
+      'time to start': quantileMetrics(results['time to start']),
       'timeouts': results.timeouts.reduce((a, b) => a + b),
       'aborts': results.aborts.reduce((a, b) => a + b),
-      'calculated bandwidth [time bandwidth]': sumCalculatedBitrates / calculatedBitratesLength,
-      'selected bitrates': sumSelectedBitrates / selectedBitratesLength,
-      'empty buffer regions [start end]': results['empty buffer regions [start end]'].reduce((acc, val) => acc + val.length - 1, 0)
+      'calculated bandwidth [time bandwidth]': quantileMetrics(calculatedBitrates),
+      'selected bitrates': quantileMetrics(selectedBitrates),
+      'rebuffering count': results['empty buffer regions [start end]'].reduce((acc, val) => acc + val.length - 1, 0),
+      'indicated bitrates': sumSelectedBitrates / selectedBitratesLength,
+      'rebuffer ratio': quantileMetrics(rebufferRatios)
     };
-
     $('#result').innerText = tableToText(objToTable(sum));
-
+    console.log(sum);
     displayTimeline(err, res);
     if(resolve) resolve();
   });
