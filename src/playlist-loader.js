@@ -9,6 +9,7 @@ import resolveUrl from './resolve-url';
 import { mergeOptions, EventTarget, log } from 'video.js';
 import { isEnabled } from './playlist.js';
 import m3u8 from 'm3u8-parser';
+import { parse as mpdParser } from 'mpd-parser';
 import window from 'global/window';
 
 /**
@@ -117,6 +118,12 @@ const updateMaster = function(master, media) {
  * @constructor
  */
 const PlaylistLoader = function(srcUrl, hls, withCredentials) {
+  let playlist;
+  if (typeof srcUrl === 'object') {
+    srcUrl = srcUrl.uri;
+    playlist = srcUrl;
+  }
+
   /* eslint-disable consistent-this */
   let loader = this;
   /* eslint-enable consistent-this */
@@ -464,7 +471,7 @@ const PlaylistLoader = function(srcUrl, hls, withCredentials) {
     loader.started = true;
 
     // request the specified URL
-    request = this.hls_.xhr({
+    request = this.hls_.xhr({ //////////////////// we don't need to always request data
       uri: srcUrl,
       withCredentials
     }, function(error, req) {
@@ -494,9 +501,13 @@ const PlaylistLoader = function(srcUrl, hls, withCredentials) {
         return loader.trigger('error');
       }
 
-      parser = new m3u8.Parser();
-      parser.push(req.responseText);
-      parser.end();
+      if (/\.mpd/i.test(srcUrl)) {
+        parser = { manifest: mpdParser(xhr.responseText) };
+      } else {
+        parser = new m3u8.Parser();
+        parser.push(req.responseText);
+        parser.end();
+      }
 
       loader.state = 'HAVE_MASTER';
 

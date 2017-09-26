@@ -381,7 +381,7 @@ export const initialize = {
         let playlistLoader;
 
         if (properties.resolvedUri) {
-          playlistLoader = new PlaylistLoader(properties.resolvedUri,
+          playlistLoader = new PlaylistLoader(properties.resolvedUri, ////////////////////////////////// how to handle this?
                                               hls,
                                               withCredentials);
         } else {
@@ -461,7 +461,7 @@ export const initialize = {
 
         properties = videojs.mergeOptions({
           id: variantLabel,
-          playlistLoader: new PlaylistLoader(properties.resolvedUri,
+          playlistLoader: new PlaylistLoader(properties.resolvedUri, ///////////////
                                              hls,
                                              withCredentials)
         }, properties);

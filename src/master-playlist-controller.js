@@ -291,7 +291,7 @@ export class MasterPlaylistController extends videojs.EventTarget {
     };
 
     // setup playlist loaders
-    this.masterPlaylistLoader_ = new PlaylistLoader(url, this.hls_, this.withCredentials);
+    this.masterPlaylistLoader_ = new PlaylistLoader(url, this.hls_, this.withCredentials); /////////////////
     this.setupMasterPlaylistLoaderListeners_();
 
     // setup segment loaders
